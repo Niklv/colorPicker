@@ -2,5 +2,5 @@ colorPicker
 ===========
 
 Super customizible color picker.
-Writing on coffee and less, have no images.
+Writing with CoffeeScript and LESS.
 Require jQuery.
