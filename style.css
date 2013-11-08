@@ -1,0 +1,57 @@
+.picker {
+  position: absolute;
+  width: 200px;
+  height: 150px;
+  border: 1px solid gray;
+  -webkit-box-sizing: 'border-box';
+  -moz-box-sizing: 'border-box';
+  box-sizing: 'border-box';
+  padding: 5px;
+  background-color: #ffffff;
+}
+.picker .color-map {
+  cursor: pointer;
+  position: relative;
+  width: 84%;
+  height: 100%;
+  float: left;
+  background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  background-image: -moz-linear-gradient(top, rgba(255, 255, 255, 0), #000000), -moz-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  background-image: -o-linear-gradient(top, rgba(255, 255, 255, 0), #000000), -o-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), #000000), linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+}
+.picker .color-map .pointer {
+  height: 6px;
+  width: 6px;
+  margin-top: -3px;
+  margin-left: -3px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  -webkit-border-radius: 3px;
+  -webkit-background-clip: padding-box;
+  -moz-border-radius: 3px;
+  -moz-background-clip: padding;
+  border-radius: 3px;
+  background-clip: padding-box;
+  position: absolute;
+  pointer-events: none;
+}
+.picker .saturation {
+  position: relative;
+  cursor: pointer;
+  width: 13%;
+  height: 100%;
+  margin-left: 3%;
+  float: left;
+  background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff);
+  background-image: -moz-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff);
+  background-image: -o-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+  background-color: red;
+}
+.picker .saturation .selector {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+}

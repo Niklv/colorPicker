@@ -1,0 +1,65 @@
+//LESSHAT properties
+@import "lesshat.less";
+
+@w3c: true;
+@webkit: true;
+@moz: true;
+@opera: true;
+@ms: true;
+@oldWebkit: true;
+
+@width: 200px;
+@height: 150px;
+@square_width: 84%;
+@column_width: 13%;
+@circle_radius: 3px;
+@circle_color: rgba(255, 255, 255, 0.9);
+@selector_color: rgba(255, 255, 255, 0.9);
+@bg_color: white;
+
+.picker {
+  position:absolute;
+  width: @width;
+  height: @height;
+  border: 1px solid gray;
+  .box-sizing('border-box');
+  padding: 5px;
+  background-color: @bg_color;
+  .color-map {
+    cursor: pointer;
+    position: relative;
+    width: @square_width;
+    height: 100%;
+    float: left;
+    .background-image(linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, 1)), linear-gradient(to right, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 0, 1), rgba(0, 255, 0, 1), rgba(0, 255, 255, 1), rgba(0, 0, 255, 1), rgba(255, 0, 255, 1), rgba(255, 0, 0, 1)));
+    .pointer {
+      height: @circle_radius*2;
+      width: @circle_radius*2;
+      margin-top: -@circle_radius;
+      margin-left: -@circle_radius;
+      border: 2px solid @circle_color;
+      .border-radius(@circle_radius);
+      position: absolute;
+      pointer-events: none;
+      //top: 0%;
+      //left: 0%;
+    }
+  }
+  .saturation {
+    position: relative;
+    cursor: pointer;
+    width: @column_width;
+    height: 100%;
+    margin-left: 100% - @square_width - @column_width;
+    float: left;
+    .background-image(linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)));
+    background-color: red;
+    .selector {
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      background-color: @selector_color;
+      box-sizing: border-box;
+    }
+  }
+}
