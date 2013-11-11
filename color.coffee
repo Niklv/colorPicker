@@ -1,17 +1,20 @@
-$.fn.colorPicker = (action)->
-  if !action
-    @.each ()->
-      new ColorPicker @
+$.fn.colorPicker = (action="init", params)->
+  switch action
+    when "init"
+      @.each ()->
+        new ColorPicker @, params
+    else
+      console.log "nothing"
   @
 
 class ColorPicker
-  picker_code = "<div class='picker'><div class='color-map'><div class='pointer'></div></div><div class='saturation'><div class='selector'></div></div></div>"
+  picker_code = "<div class='picker'><div class='color-map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>"
 
-  el: null
   input: null
+  el: null
   map: null
   pointer: null
-  satur: null
+  col: null
   sel: null
   hsv:
     h: 0
@@ -21,28 +24,31 @@ class ColorPicker
     r: 255
     g: 0
     b: 0
+  opacity: 1
   hex: "#FF0000"
 
 
-  constructor: (input)->
+  constructor: (input, params={})->
+    if !input
+      console.log "ERROR: Empty first param"
+
     @el = $ picker_code
     @map = @el.find ".color-map"
     @pointer = @map.find ".pointer"
-    @satur = @el.find ".saturation"
-    @sel = @satur.find ".selector"
+    @col = @el.find ".column"
+    @sel = @col.find ".selector"
 
     @el.click (e)->
       e.stopPropagation()
     @map.on
       mousedown: @_pointerStartmove
       mouseup: @_pointerStopmove
-    @satur.on
+    @col.on
       mousedown: @_selectorStartmove
       mouseup: @_selectorStopmove
-    @bind input
-    @
+    @_bind input
 
-  bind: (input)=>
+  _bind: (input)=>
     if input && !$(input).next().hasClass "picker"
       @input = $ input
       @input.after @el
@@ -117,7 +123,7 @@ class ColorPicker
     @_setSelectorPosition e
 
   _setSelectorPosition: (e)=>
-    y = (e.clientY - @satur.offset().top) * 100 / @satur.height()
+    y = (e.clientY - @col.offset().top) * 100 / @col.height()
     y = Math.max(Math.min(100, y), 0)
     @sel.css "top", y + "%"
     @_setSaturation 100 - y
@@ -136,7 +142,7 @@ class ColorPicker
     @rgb = @_hsvtorgb @hsv
     @hex = @_rgbtohex @rgb
     console.log @hsv, @rgb, @hex
-    @satur.css "background-color", @hex
+    @col.css "background-color", @hex
     console.log @map.css "background-image"
 
   _rgbtohex: (rgb) ->
@@ -157,35 +163,19 @@ class ColorPicker
     q = v * (1 - f * s)
     t = v * (1 - (1 - f) * s)
     switch i % 6
-      when 0
-        r = v
-        g = t
-        b = p
-      when 1
-        r = q
-        g = v
-        b = p
-      when 2
-        r = p
-        g = v
-        b = t
-      when 3
-        r = p
-        g = q
-        b = v
-      when 4
-        r = t
-        g = p
-        b = v
-      when 5
-        r = v
-        g = p
-        b = q
+      when 0 then [r,g,b] = [v,t,p]
+      when 1 then [r,g,b] = [q,v,p]
+      when 2 then [r,g,b] = [p,v,t]
+      when 3 then [r,g,b] = [p,q,v]
+      when 4 then [r,g,b] = [t,p,v]
+      when 5 then [r,g,b] = [v,p,q]
+      else
     r: Math.floor(r * 255)
     g: Math.floor(g * 255)
     b: Math.floor(b * 255)
 
 
+new ColorPicker()
 $(".colorpicker").colorPicker()
 
 
