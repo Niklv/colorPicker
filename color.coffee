@@ -1,14 +1,14 @@
-$.fn.colorPicker = (action="init", params)->
+$.fn.colorPicker = (action = "init")->
   switch action
     when "init"
       @.each ()->
-        new ColorPicker @, params
+        new ColorPicker @
     else
       console.log "nothing"
   @
 
 class ColorPicker
-  picker_code = "<div class='picker'><div class='color-map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>"
+  picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>"
 
   input: null
   el: null
@@ -28,15 +28,20 @@ class ColorPicker
   hex: "#FF0000"
 
 
-  constructor: (input, params={})->
+  constructor: (input)->
     if !input
       console.log "ERROR: Empty first param"
 
     @el = $ picker_code
-    @map = @el.find ".color-map"
+    @map = @el.find ".map"
     @pointer = @map.find ".pointer"
     @col = @el.find ".column"
     @sel = @col.find ".selector"
+    @col.css
+      "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff)"
+      "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff)"
+
+    @_recalculateColor()
 
     @el.click (e)->
       e.stopPropagation()
@@ -70,26 +75,34 @@ class ColorPicker
     @el.css "left", position.left + parseInt(@input.css("margin-left"), 10)
     @el.toggle()
 
-  _pointerStartmove: (e)=>
-    @_setPointerPosition e
+  _bindFocus: ()->
     $("body").addClass "unselectable"
+    @input.blur()
+
+  _unbindFocus: ()->
+    $("body").removeClass "unselectable"
+    @input.focus()
+
+  _pointerStartmove: (e)=>
     $(document).on
-      mouseover: @_setPointerPosition
-      mousemove: @_setPointerPosition
+      mouseover: @_pointerMove
+      mousemove: @_pointerMove
       mouseup: @_pointerStopmove
-    @input.blur ()->
-      @.focus()
+    @_bindFocus()
+    @_pointerMove e
+
 
   _pointerStopmove: (e)=>
-    @input.off "blur"
+    @_pointerMove e
+    @_unbindFocus()
     $(document).off
-      mouseover: @_setPointerPosition
-      mousemove: @_setPointerPosition
+      mouseover: @_pointerMove
+      mousemove: @_pointerMove
       mouseup: @_pointerStopmove
-    $("body").removeClass "unselectable"
-    @_setPointerPosition e
 
-  _setPointerPosition: (e)=>
+  _pointerMove: (e)=>
+    e.stopPropagation()
+    e.preventDefault()
     offset = @map.offset()
     maxW = @map.width()
     maxH = @map.height()
@@ -103,26 +116,26 @@ class ColorPicker
     @_setValue 100 - y
     @_recalculateColor()
 
+
   _selectorStartmove: (e)=>
-    @_setSelectorPosition e
-    $("body").addClass "unselectable"
     $(document).on
-      mouseover: @_setSelectorPosition
-      mousemove: @_setSelectorPosition
+      mouseover: @_selectorMove
+      mousemove: @_selectorMove
       mouseup: @_selectorStopmove
-    @input.blur ()->
-      @.focus()
+    @_bindFocus()
+    @_selectorMove e
 
   _selectorStopmove: (e)=>
-    @input.off "blur"
+    @_selectorMove e
+    @_unbindFocus()
     $(document).off
-      mouseover: @_setSelectorPosition
-      mousemove: @_setSelectorPosition
+      mouseover: @_selectorMove
+      mousemove: @_selectorMove
       mouseup: @_selectorStopmove
-    $("body").removeClass "unselectable"
-    @_setSelectorPosition e
 
-  _setSelectorPosition: (e)=>
+  _selectorMove: (e)=>
+    e.stopPropagation()
+    e.preventDefault()
     y = (e.clientY - @col.offset().top) * 100 / @col.height()
     y = Math.max(Math.min(100, y), 0)
     @sel.css "top", y + "%"
@@ -130,7 +143,7 @@ class ColorPicker
     @_recalculateColor()
 
   _setHue: (h)=>
-    @hsv.h = h / 100 #* 2 * Math.PI
+    @hsv.h = h / 100
 
   _setSaturation: (s)=>
     @hsv.s = s / 100
@@ -139,43 +152,68 @@ class ColorPicker
     @hsv.v = v / 100
 
   _recalculateColor: ()=>
-    @rgb = @_hsvtorgb @hsv
-    @hex = @_rgbtohex @rgb
-    console.log @hsv, @rgb, @hex
-    @col.css "background-color", @hex
-    console.log @map.css "background-image"
+    @rgb = @cnv.hsvtorgb @hsv
+    @hex = @cnv.rgbtohex @rgb
+    @map.css
+      "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, #{1 - @hsv.s}), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)"
+      "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, #{1 - @hsv.s}), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
+    @col.css
+      "background-color": @cnv.hsvtohex h: @hsv.h, s: 1, v: @hsv.v
+    @input?.val(@hex).trigger "changeColor"
 
-  _rgbtohex: (rgb) ->
-    "#" + @_toHex(rgb.r) + @_toHex(rgb.g) + @_toHex(rgb.b)
+  _updateControls: ()=>
+    @pointer.css "top", (1 - @hsv.v) * 100 + "%"
+    @pointer.css "left", @hsv.h * 100 + "%"
+    @sel.css "top", (1 - @hsv.s) * 100 + "%"
 
-  _toHex: (n)->
-    if !n
-      return "00"
-    n = Math.max 0, Math.min(n, 255)
-    "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt n % 16
+  setHSV: (h = 0, s = 1, v = 1)->
+    if !h || !s || !v
+      return
+    @hsv = {h, s, v}
+    @_recalculateColor()
+    @_updateControls()
 
+  getHSV: ()->
+    @hsv
 
-  _hsvtorgb: (hsv) ->
-    {h,s,v} = hsv
-    i = Math.floor h * 6
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - f * s)
-    t = v * (1 - (1 - f) * s)
-    switch i % 6
-      when 0 then [r,g,b] = [v,t,p]
-      when 1 then [r,g,b] = [q,v,p]
-      when 2 then [r,g,b] = [p,v,t]
-      when 3 then [r,g,b] = [p,q,v]
-      when 4 then [r,g,b] = [t,p,v]
-      when 5 then [r,g,b] = [v,p,q]
-      else
-    r: Math.floor(r * 255)
-    g: Math.floor(g * 255)
-    b: Math.floor(b * 255)
+  getRGB: ()->
+    @rgb
 
+  getHEX: ()->
+    @hex
 
-new ColorPicker()
+  cnv:
+    hsvtohex: (hsv)->
+      @rgbtohex @hsvtorgb hsv
+
+    hsvtorgb: (hsv) ->
+      {h,s,v} = hsv
+      i = Math.floor h * 6
+      f = h * 6 - i
+      p = v * (1 - s)
+      q = v * (1 - f * s)
+      t = v * (1 - (1 - f) * s)
+      switch i % 6
+        when 0 then [r,g,b] = [v, t, p]
+        when 1 then [r,g,b] = [q, v, p]
+        when 2 then [r,g,b] = [p, v, t]
+        when 3 then [r,g,b] = [p, q, v]
+        when 4 then [r,g,b] = [t, p, v]
+        when 5 then [r,g,b] = [v, p, q]
+        else
+      r: Math.floor(r * 255)
+      g: Math.floor(g * 255)
+      b: Math.floor(b * 255)
+
+    rgbtohex: (rgb) ->
+      "#" + @ntohex(rgb.r) + @ntohex(rgb.g) + @ntohex(rgb.b)
+
+    ntohex: (n)->
+      if !n
+        return "00"
+      n = Math.max 0, Math.min(n, 255)
+      "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt n % 16
+
 $(".colorpicker").colorPicker()
 
 
