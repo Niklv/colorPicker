@@ -42,6 +42,7 @@ class ColorPicker
       "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff)"
 
     @_recalculateColor()
+    @_updateControls()
 
     @el.click (e)->
       e.stopPropagation()
@@ -57,12 +58,46 @@ class ColorPicker
     if input && !$(input).next().hasClass "picker"
       @input = $ input
       @input.after @el
-      @input.click @_showHide
-      @input.focus @_showHide
+      @input.attr 'maxlength', 7
+      @input.on
+        click: @_showHide
+        focus: @_showHide
+        input: @_parseColor
       $(document).click ()=>
         @el.hide()
       true
     else false
+
+  _parseColor: (e)=>
+    val = @input.val()
+    color = val.replace /[^A-Fa-f0-9]/g, ""
+    if val[0] isnt '#' || val.length - 1 != color.length
+      pos = @input[0].selectionStart;
+      @input.val '#' + color
+      if pos != val.length
+        @input[0].selectionStart = pos - 1
+        @input[0].selectionEnd = pos - 1
+
+    rgbarr = []
+    if color.length is 0
+      color = "FFFFFF"
+    if color.length is 3
+      color = color[0] + color[0] + color[1] + color[1] + color[2] + color[2]
+    else
+      while color.length < 6
+        color += color[color.length - 1]
+    while color.length >= 2
+      rgbarr.push parseInt color.substring(0, 2), 16
+      color = color.substring 2, color.length
+    rgb =
+      r: rgbarr[0]
+      g: rgbarr[1]
+      b: rgbarr[2]
+    @hsv = @cnv.rgbtohsv rgb
+    @hex = @cnv.rgbtohex rgb
+    @_updateControls()
+
+
 
   _showHide: (e)=>
     e.stopPropagation()
@@ -115,6 +150,7 @@ class ColorPicker
     @_setHue x
     @_setValue 100 - y
     @_recalculateColor()
+    @_updateControls()
 
 
   _selectorStartmove: (e)=>
@@ -141,6 +177,7 @@ class ColorPicker
     @sel.css "top", y + "%"
     @_setSaturation 100 - y
     @_recalculateColor()
+    @_updateControls()
 
   _setHue: (h)=>
     @hsv.h = h / 100
@@ -154,17 +191,18 @@ class ColorPicker
   _recalculateColor: ()=>
     @rgb = @cnv.hsvtorgb @hsv
     @hex = @cnv.rgbtohex @rgb
-    @map.css
-      "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, #{1 - @hsv.s}), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)"
-      "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, #{1 - @hsv.s}), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
-    @col.css
-      "background-color": @cnv.hsvtohex h: @hsv.h, s: 1, v: @hsv.v
-    @input?.val(@hex).trigger "changeColor"
+    @input?.val(@hex)
 
   _updateControls: ()=>
     @pointer.css "top", (1 - @hsv.v) * 100 + "%"
     @pointer.css "left", @hsv.h * 100 + "%"
     @sel.css "top", (1 - @hsv.s) * 100 + "%"
+    @map.css
+      "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, #{1 - @hsv.s}), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)"
+      "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, #{1 - @hsv.s}), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
+    @col.css
+      "background-color": @cnv.hsvtohex h: @hsv.h, s: 1, v: @hsv.v
+    @input?.trigger "changeColor"
 
   setHSV: (h = 0, s = 1, v = 1)->
     if !h || !s || !v
@@ -205,6 +243,28 @@ class ColorPicker
       g: Math.floor(g * 255)
       b: Math.floor(b * 255)
 
+    rgbtohsv: (rgb) ->
+      {r,g,b} = rgb
+      r = r / 255
+      g = g / 255
+      b = b / 255
+      max = Math.max r, g, b
+      min = Math.min r, g, b
+      v = max
+      d = max - min;
+      s = if max is 0 then 0 else d / max
+      if max is min
+        h = 0
+      else
+        switch max
+          when r then h = (g - b) / d + (if g < b then 6 else 0)
+          when g then h = (b - r) / d + 2
+          when b then h = (r - g) / d + 4
+          else
+        h /= 6;
+      {h, s, v}
+
+
     rgbtohex: (rgb) ->
       "#" + @ntohex(rgb.r) + @ntohex(rgb.g) + @ntohex(rgb.b)
 
@@ -215,6 +275,10 @@ class ColorPicker
       "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt n % 16
 
 $(".colorpicker").colorPicker()
+$(".colorpicker").each ()->
+  $(@).on
+    changeColor: ()->
+      $("body").css "background-color": $(@).val()
 
 
 
