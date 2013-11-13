@@ -1,12 +1,11 @@
 $.fn.colorPicker = (action = "init", param)->
-  @.each ()->
-    data = $(@).data "colorpicker"
-    switch action
-      when "init"
+  switch action
+    when "init"
+      @.each ()->
+        data = $(@).data "colorpicker"
         $(@).data 'colorpicker', new ColorPicker @
-      else
-        data[action](param)
-  @
+    else
+      @.eq(0).data("colorpicker")[action](param)
 
 class ColorPicker
   picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>"
@@ -90,12 +89,12 @@ class ColorPicker
     while color.length >= 2
       rgbarr.push parseInt color.substring(0, 2), 16
       color = color.substring 2, color.length
-    rgb =
+    @rgb =
       r: rgbarr[0]
       g: rgbarr[1]
       b: rgbarr[2]
-    @hsv = @cnv.rgbtohsv rgb
-    @hex = @cnv.rgbtohex rgb
+    @hsv = @cnv.rgbtohsv @rgb
+    @hex = @cnv.rgbtohex @rgb
     @_updateControls()
 
 

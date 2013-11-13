@@ -15,6 +15,7 @@ body.unselectable {
   box-sizing: 'border-box';
   padding: 5px;
   background-color: #ffffff;
+  z-index: 10000;
 }
 .picker .map {
   cursor: crosshair;

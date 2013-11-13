@@ -17,6 +17,8 @@ html:
 js:
 ```js
 $(".colorpicker").colorPicker();
+$(".colorpicker").colorPicker("setHEX","#123456");
+$(".colorpicker").colorPicker("getHEX");
 ```
 
 input fires "changeColor" event

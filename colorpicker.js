@@ -7,17 +7,16 @@
     if (action == null) {
       action = "init";
     }
-    this.each(function() {
-      var data;
-      data = $(this).data("colorpicker");
-      switch (action) {
-        case "init":
+    switch (action) {
+      case "init":
+        return this.each(function() {
+          var data;
+          data = $(this).data("colorpicker");
           return $(this).data('colorpicker', new ColorPicker(this));
-        default:
-          return data[action](param);
-      }
-    });
-    return this;
+        });
+      default:
+        return this.eq(0).data("colorpicker")[action](param);
+    }
   };
 
   ColorPicker = (function() {
@@ -117,7 +116,7 @@
     };
 
     ColorPicker.prototype._parseColor = function(e) {
-      var color, pos, rgb, rgbarr, val;
+      var color, pos, rgbarr, val;
       val = this.input.val();
       color = val.replace(/[^A-Fa-f0-9]/g, "");
       if (val[0] !== '#' || val.length - 1 !== color.length) {
@@ -143,13 +142,13 @@
         rgbarr.push(parseInt(color.substring(0, 2), 16));
         color = color.substring(2, color.length);
       }
-      rgb = {
+      this.rgb = {
         r: rgbarr[0],
         g: rgbarr[1],
         b: rgbarr[2]
       };
-      this.hsv = this.cnv.rgbtohsv(rgb);
-      this.hex = this.cnv.rgbtohex(rgb);
+      this.hsv = this.cnv.rgbtohsv(this.rgb);
+      this.hex = this.cnv.rgbtohex(this.rgb);
       return this._updateControls();
     };
 
