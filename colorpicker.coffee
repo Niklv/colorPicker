@@ -1,10 +1,11 @@
-$.fn.colorPicker = (action = "init")->
-  switch action
-    when "init"
-      @.each ()->
-        new ColorPicker @
-    else
-      console.log "nothing"
+$.fn.colorPicker = (action = "init", param)->
+  @.each ()->
+    data = $(@).data "colorpicker"
+    switch action
+      when "init"
+        $(@).data 'colorpicker', new ColorPicker @
+      else
+        data[action](param)
   @
 
 class ColorPicker
@@ -211,6 +212,15 @@ class ColorPicker
     @_recalculateColor()
     @_updateControls()
 
+  setHEX: (hex)->
+    if !hex
+      return
+    @hex = hex
+    @rgb = @cnv.hextorgb @hex
+    @hsv = @cnv.rgbtohsv @rgb
+    @input?.val(@hex)
+    @_updateControls()
+
   getHSV: ()->
     @hsv
 
@@ -273,3 +283,14 @@ class ColorPicker
         return "00"
       n = Math.max 0, Math.min(n, 255)
       "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt n % 16
+
+    hextorgb: (hex)->
+      res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec hex
+      if !res
+        r: 255
+        g: 255
+        b: 255
+      else
+        r: parseInt(res[1], 16)
+        g: parseInt(res[2], 16)
+        b: parseInt(res[3], 16)

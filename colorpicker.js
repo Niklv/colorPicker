@@ -3,19 +3,20 @@
   var ColorPicker,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  $.fn.colorPicker = function(action) {
+  $.fn.colorPicker = function(action, param) {
     if (action == null) {
       action = "init";
     }
-    switch (action) {
-      case "init":
-        this.each(function() {
-          return new ColorPicker(this);
-        });
-        break;
-      default:
-        console.log("nothing");
-    }
+    this.each(function() {
+      var data;
+      data = $(this).data("colorpicker");
+      switch (action) {
+        case "init":
+          return $(this).data('colorpicker', new ColorPicker(this));
+        default:
+          return data[action](param);
+      }
+    });
     return this;
   };
 
@@ -308,6 +309,20 @@
       return this._updateControls();
     };
 
+    ColorPicker.prototype.setHEX = function(hex) {
+      var _ref;
+      if (!hex) {
+        return;
+      }
+      this.hex = hex;
+      this.rgb = this.cnv.hextorgb(this.hex);
+      this.hsv = this.cnv.rgbtohsv(this.rgb);
+      if ((_ref = this.input) != null) {
+        _ref.val(this.hex);
+      }
+      return this._updateControls();
+    };
+
     ColorPicker.prototype.getHSV = function() {
       return this.hsv;
     };
@@ -400,6 +415,23 @@
         }
         n = Math.max(0, Math.min(n, 255));
         return "0123456789ABCDEF".charAt((n - n % 16) / 16) + "0123456789ABCDEF".charAt(n % 16);
+      },
+      hextorgb: function(hex) {
+        var res;
+        res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!res) {
+          return {
+            r: 255,
+            g: 255,
+            b: 255
+          };
+        } else {
+          return {
+            r: parseInt(res[1], 16),
+            g: parseInt(res[2], 16),
+            b: parseInt(res[3], 16)
+          };
+        }
       }
     };
 
