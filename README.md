@@ -1,5 +1,5 @@
-colorPicker
-===========
+#colorPicker
+
 
 Super customizable HTML5 color picker.
 Using CoffeeScript and LESS.
@@ -9,15 +9,18 @@ No images require.
 
 Support IE10+, FF, Chrome, Safari
 
-Usage
-===========
+##Usage
 html:
+```html
 <input class="colorpicker">
-
+```
 js:
+```js
 $(".colorpicker").colorPicker();
+```
 
-input fires event "changeColor"
+input fires "changeColor" event
 
-example: index.html
+##example
+see index.html
 
