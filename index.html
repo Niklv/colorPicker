@@ -2,7 +2,7 @@
 <html>
 <head>
     <title></title>
-    <link href="style.css" rel="stylesheet"/>
+    <link href="colorpicker.css" rel="stylesheet"/>
 </head>
 <body>
 <input class="colorpicker">
@@ -10,7 +10,18 @@
 <input class="colorpicker">
 <input class="colorpicker">
 
+<script src="jquery.js"></script>
 <script src="colorpicker.js"></script>
-<script src="colorpicker.js"></script>
+<script>
+    $(".colorpicker").colorPicker().each(function () {
+        return $(this).on({
+            changeColor: function () {
+                return $("body").css({
+                    "background-color": $(this).val()
+                });
+            }
+        });
+    });
+</script>
 </body>
 </html>

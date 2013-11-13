@@ -407,16 +407,4 @@
 
   })();
 
-  $(".colorpicker").colorPicker();
-
-  $(".colorpicker").each(function() {
-    return $(this).on({
-      changeColor: function() {
-        return $("body").css({
-          "background-color": $(this).val()
-        });
-      }
-    });
-  });
-
 }).call(this);
