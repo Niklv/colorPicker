@@ -5,6 +5,7 @@
     <link href="colorpicker.css" rel="stylesheet"/>
 </head>
 <body>
+<br><br><br><br><br><br><br><br>
 <input class="colorpicker">
 <input class="colorpicker">
 <input class="colorpicker">
@@ -13,7 +14,8 @@
 <script src="jquery.js"></script>
 <script src="colorpicker.js"></script>
 <script>
-    $(".colorpicker").colorPicker("init", {opacity: 1}).each(function () {
+    var picks = $(".colorpicker");
+    picks.each(function () {
         return $(this).on({
             changeColor: function () {
                 return $("body").css({
@@ -22,7 +24,11 @@
             }
         });
     });
-    $(".colorpicker:first").colorPicker("setHEX", "#73DBB6");
+    picks.eq(0).colorPicker("init", {opacity: 1, position:"bottom"}).colorPicker("setHEX", "#73DBB6");;
+    picks.eq(1).colorPicker("init", {opacity: 1, position:"top"});
+    picks.eq(2).colorPicker("init", {opacity: 0, position:"bottom"});
+    picks.eq(3).colorPicker("init", {opacity: 0, position:"top"});
+
 </script>
 </body>
 </html>

@@ -27,7 +27,7 @@ class ColorPicker
     b: 0
   opacity: 1
   hex: "#FF0000"
-
+  position: "bottom"
 
   constructor: (input, param)->
     if !input
@@ -59,6 +59,9 @@ class ColorPicker
         mousedown: @_opselectorStartmove
     else
       @el.addClass "disable-opacity"
+
+    if param?.position
+      @position = param.position
 
     @_bind input
 
@@ -114,8 +117,14 @@ class ColorPicker
     $(".picker").not(@el).each ()->
       $(@).hide()
     position = @input.position()
-    @el.css "top", position.top + @input.outerHeight true
-    @el.css "left", position.left + parseInt(@input.css("margin-left"), 10)
+
+    switch @position
+      when "top"
+        @el.css "top", position.top - @el.outerHeight true
+        @el.css "left", position.left + parseInt(@input.css("margin-left"), 10)
+      when "bottom"
+        @el.css "top", position.top + @input.outerHeight true
+        @el.css "left", position.left + parseInt(@input.css("margin-left"), 10)
     @el.toggle()
 
   _bindFocus: ()->
