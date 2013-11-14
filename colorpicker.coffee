@@ -8,13 +8,14 @@ $.fn.colorPicker = (action = "init", param)->
       @.eq(0).data("colorpicker")[action](param)
 
 class ColorPicker
-  picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>"
+  picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column first'><div class='selector'></div></div><div class='column second'><div class='opacity-bg'><div class='selector'></div></div></div></div>"
 
   input: null
   el: null
   map: null
   pointer: null
   col: null
+  op_col: null
   sel: null
   hsv:
     h: 0
@@ -35,8 +36,11 @@ class ColorPicker
     @el = $ picker_code
     @map = @el.find ".map"
     @pointer = @map.find ".pointer"
-    @col = @el.find ".column"
+    @col = @el.find ".column.first"
     @sel = @col.find ".selector"
+    @op_col = @el.find ".column.second"
+    @op_bg = @op_col.find ".opacity-bg"
+    @op_sel = @op_col.find ".selector"
     @col.css
       "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff)"
       "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff)"
@@ -48,10 +52,10 @@ class ColorPicker
       e.stopPropagation()
     @map.on
       mousedown: @_pointerStartmove
-      mouseup: @_pointerStopmove
     @col.on
       mousedown: @_selectorStartmove
-      mouseup: @_selectorStopmove
+    @op_col.on
+      mousedown: @_opselectorStartmove
     @_bind input
 
   _bind: (input)=>
@@ -118,6 +122,7 @@ class ColorPicker
     $("body").removeClass "unselectable"
     @input.focus()
 
+  #MAP
   _pointerStartmove: (e)=>
     $(document).on
       mouseover: @_pointerMove
@@ -125,7 +130,6 @@ class ColorPicker
       mouseup: @_pointerStopmove
     @_bindFocus()
     @_pointerMove e
-
 
   _pointerStopmove: (e)=>
     @_pointerMove e
@@ -152,7 +156,7 @@ class ColorPicker
     @_recalculateColor()
     @_updateControls()
 
-
+  #SELECTOR 1
   _selectorStartmove: (e)=>
     $(document).on
       mouseover: @_selectorMove
@@ -179,6 +183,35 @@ class ColorPicker
     @_recalculateColor()
     @_updateControls()
 
+
+  #SELECTOR 2
+  _opselectorStartmove: (e)=>
+    $(document).on
+      mouseover: @_opselectorMove
+      mousemove: @_opselectorMove
+      mouseup: @_opselectorStopmove
+    @_bindFocus()
+    @_opselectorMove e
+
+  _opselectorStopmove: (e)=>
+    @_opselectorMove e
+    @_unbindFocus()
+    $(document).off
+      mouseover: @_opselectorMove
+      mousemove: @_opselectorMove
+      mouseup: @_opselectorStopmove
+
+  _opselectorMove: (e)=>
+    e.stopPropagation()
+    e.preventDefault()
+    y = (e.clientY - @op_col.offset().top) * 100 / @op_col.height()
+    y = Math.max(Math.min(100, y), 0)
+    @op_sel.css "top", y + "%"
+    @_setOpacity 100 - y
+    @_recalculateColor()
+    @_updateControls()
+
+
   _setHue: (h)=>
     @hsv.h = h / 100
 
@@ -187,6 +220,9 @@ class ColorPicker
 
   _setValue: (v)=>
     @hsv.v = v / 100
+
+  _setOpacity: (o)=>
+    @opacity = o / 100
 
   _recalculateColor: ()=>
     @rgb = @cnv.hsvtorgb @hsv
@@ -202,11 +238,12 @@ class ColorPicker
       "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, #{1 - @hsv.s}), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
     @col.css
       "background-color": @cnv.hsvtohex h: @hsv.h, s: 1, v: @hsv.v
+    rgba = @getRGBA()
+    @op_bg.css
+      "background-color": "rgba(#{rgba.r},#{rgba.g},#{rgba.b},#{rgba.a})"
     @input?.trigger "changeColor"
 
-  setHSV: (h = 0, s = 1, v = 1)->
-    if !h || !s || !v
-      return
+  setHSV: (h, s, v)->
     @hsv = {h, s, v}
     @_recalculateColor()
     @_updateControls()
@@ -220,6 +257,17 @@ class ColorPicker
     @input?.val(@hex)
     @_updateControls()
 
+  setRGBA: (r,g,b,a)->
+    @rgb = {r,g,b}
+    @opacity = a
+    @hsv = @cnv.rgbtohsv @rgb
+    @hex = @cnv.rgbtohex @rgb
+    @input?.val(@hex)
+    @_updateControls()
+
+  setAlpha: (a)->
+    @opacity = a
+
   getHSV: ()->
     @hsv
 
@@ -228,6 +276,18 @@ class ColorPicker
 
   getHEX: ()->
     @hex
+
+  getAlpha: ()->
+    @opacity
+
+  getRGBA: ()->
+    $.extend @rgb, a:@opacity
+
+  getHSVA: ()->
+    $.extend @rgb, a:@opacity
+
+  getRGBA_string: ()->
+    "rgba(#{@rgb.r},#{@rgb.g},#{@rgb.b},#{@opacity})"
 
   cnv:
     hsvtohex: (hsv)->
@@ -240,14 +300,15 @@ class ColorPicker
       p = v * (1 - s)
       q = v * (1 - f * s)
       t = v * (1 - (1 - f) * s)
-      switch i % 6
-        when 0 then [r,g,b] = [v, t, p]
-        when 1 then [r,g,b] = [q, v, p]
-        when 2 then [r,g,b] = [p, v, t]
-        when 3 then [r,g,b] = [p, q, v]
-        when 4 then [r,g,b] = [t, p, v]
-        when 5 then [r,g,b] = [v, p, q]
-        else
+      i = i % 6
+      [r,g,b] = switch
+        when i is 0 then [v, t, p]
+        when i is 1 then [q, v, p]
+        when i is 2 then [p, v, t]
+        when i is 3 then [p, q, v]
+        when i is 4 then [t, p, v]
+        when i is 5 then [v, p, q]
+        else [1, 1, 1]
       r: Math.floor(r * 255)
       g: Math.floor(g * 255)
       b: Math.floor(b * 255)
@@ -269,7 +330,6 @@ class ColorPicker
           when r then h = (g - b) / d + (if g < b then 6 else 0)
           when g then h = (b - r) / d + 2
           when b then h = (r - g) / d + 4
-          else
         h /= 6;
       {h, s, v}
 

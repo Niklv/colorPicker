@@ -22,7 +22,7 @@
   ColorPicker = (function() {
     var picker_code;
 
-    picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column'><div class='selector'></div></div></div>";
+    picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column first'><div class='selector'></div></div><div class='column second'><div class='opacity-bg'><div class='selector'></div></div></div></div>";
 
     ColorPicker.prototype.input = null;
 
@@ -33,6 +33,8 @@
     ColorPicker.prototype.pointer = null;
 
     ColorPicker.prototype.col = null;
+
+    ColorPicker.prototype.op_col = null;
 
     ColorPicker.prototype.sel = null;
 
@@ -55,9 +57,13 @@
     function ColorPicker(input) {
       this._updateControls = __bind(this._updateControls, this);
       this._recalculateColor = __bind(this._recalculateColor, this);
+      this._setOpacity = __bind(this._setOpacity, this);
       this._setValue = __bind(this._setValue, this);
       this._setSaturation = __bind(this._setSaturation, this);
       this._setHue = __bind(this._setHue, this);
+      this._opselectorMove = __bind(this._opselectorMove, this);
+      this._opselectorStopmove = __bind(this._opselectorStopmove, this);
+      this._opselectorStartmove = __bind(this._opselectorStartmove, this);
       this._selectorMove = __bind(this._selectorMove, this);
       this._selectorStopmove = __bind(this._selectorStopmove, this);
       this._selectorStartmove = __bind(this._selectorStartmove, this);
@@ -73,8 +79,11 @@
       this.el = $(picker_code);
       this.map = this.el.find(".map");
       this.pointer = this.map.find(".pointer");
-      this.col = this.el.find(".column");
+      this.col = this.el.find(".column.first");
       this.sel = this.col.find(".selector");
+      this.op_col = this.el.find(".column.second");
+      this.op_bg = this.op_col.find(".opacity-bg");
+      this.op_sel = this.op_col.find(".selector");
       this.col.css({
         "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff)",
         "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff)"
@@ -85,12 +94,13 @@
         return e.stopPropagation();
       });
       this.map.on({
-        mousedown: this._pointerStartmove,
-        mouseup: this._pointerStopmove
+        mousedown: this._pointerStartmove
       });
       this.col.on({
-        mousedown: this._selectorStartmove,
-        mouseup: this._selectorStopmove
+        mousedown: this._selectorStartmove
+      });
+      this.op_col.on({
+        mousedown: this._opselectorStartmove
       });
       this._bind(input);
     }
@@ -248,6 +258,38 @@
       return this._updateControls();
     };
 
+    ColorPicker.prototype._opselectorStartmove = function(e) {
+      $(document).on({
+        mouseover: this._opselectorMove,
+        mousemove: this._opselectorMove,
+        mouseup: this._opselectorStopmove
+      });
+      this._bindFocus();
+      return this._opselectorMove(e);
+    };
+
+    ColorPicker.prototype._opselectorStopmove = function(e) {
+      this._opselectorMove(e);
+      this._unbindFocus();
+      return $(document).off({
+        mouseover: this._opselectorMove,
+        mousemove: this._opselectorMove,
+        mouseup: this._opselectorStopmove
+      });
+    };
+
+    ColorPicker.prototype._opselectorMove = function(e) {
+      var y;
+      e.stopPropagation();
+      e.preventDefault();
+      y = (e.clientY - this.op_col.offset().top) * 100 / this.op_col.height();
+      y = Math.max(Math.min(100, y), 0);
+      this.op_sel.css("top", y + "%");
+      this._setOpacity(100 - y);
+      this._recalculateColor();
+      return this._updateControls();
+    };
+
     ColorPicker.prototype._setHue = function(h) {
       return this.hsv.h = h / 100;
     };
@@ -260,6 +302,10 @@
       return this.hsv.v = v / 100;
     };
 
+    ColorPicker.prototype._setOpacity = function(o) {
+      return this.opacity = o / 100;
+    };
+
     ColorPicker.prototype._recalculateColor = function() {
       var _ref;
       this.rgb = this.cnv.hsvtorgb(this.hsv);
@@ -268,7 +314,7 @@
     };
 
     ColorPicker.prototype._updateControls = function() {
-      var _ref;
+      var rgba, _ref;
       this.pointer.css("top", (1 - this.hsv.v) * 100 + "%");
       this.pointer.css("left", this.hsv.h * 100 + "%");
       this.sel.css("top", (1 - this.hsv.s) * 100 + "%");
@@ -283,22 +329,14 @@
           v: this.hsv.v
         })
       });
+      rgba = this.getRGBA();
+      this.op_bg.css({
+        "background-color": "rgba(" + rgba.r + "," + rgba.g + "," + rgba.b + "," + rgba.a + ")"
+      });
       return (_ref = this.input) != null ? _ref.trigger("changeColor") : void 0;
     };
 
     ColorPicker.prototype.setHSV = function(h, s, v) {
-      if (h == null) {
-        h = 0;
-      }
-      if (s == null) {
-        s = 1;
-      }
-      if (v == null) {
-        v = 1;
-      }
-      if (!h || !s || !v) {
-        return;
-      }
       this.hsv = {
         h: h,
         s: s,
@@ -322,6 +360,26 @@
       return this._updateControls();
     };
 
+    ColorPicker.prototype.setRGBA = function(r, g, b, a) {
+      var _ref;
+      this.rgb = {
+        r: r,
+        g: g,
+        b: b
+      };
+      this.opacity = a;
+      this.hsv = this.cnv.rgbtohsv(this.rgb);
+      this.hex = this.cnv.rgbtohex(this.rgb);
+      if ((_ref = this.input) != null) {
+        _ref.val(this.hex);
+      }
+      return this._updateControls();
+    };
+
+    ColorPicker.prototype.setAlpha = function(a) {
+      return this.opacity = a;
+    };
+
     ColorPicker.prototype.getHSV = function() {
       return this.hsv;
     };
@@ -334,38 +392,57 @@
       return this.hex;
     };
 
+    ColorPicker.prototype.getAlpha = function() {
+      return this.opacity;
+    };
+
+    ColorPicker.prototype.getRGBA = function() {
+      return $.extend(this.rgb, {
+        a: this.opacity
+      });
+    };
+
+    ColorPicker.prototype.getHSVA = function() {
+      return $.extend(this.rgb, {
+        a: this.opacity
+      });
+    };
+
+    ColorPicker.prototype.getRGBA_string = function() {
+      return "rgba(" + this.rgb.r + "," + this.rgb.g + "," + this.rgb.b + "," + this.opacity + ")";
+    };
+
     ColorPicker.prototype.cnv = {
       hsvtohex: function(hsv) {
         return this.rgbtohex(this.hsvtorgb(hsv));
       },
       hsvtorgb: function(hsv) {
-        var b, f, g, h, i, p, q, r, s, t, v, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+        var b, f, g, h, i, p, q, r, s, t, v, _ref;
         h = hsv.h, s = hsv.s, v = hsv.v;
         i = Math.floor(h * 6);
         f = h * 6 - i;
         p = v * (1 - s);
         q = v * (1 - f * s);
         t = v * (1 - (1 - f) * s);
-        switch (i % 6) {
-          case 0:
-            _ref = [v, t, p], r = _ref[0], g = _ref[1], b = _ref[2];
-            break;
-          case 1:
-            _ref1 = [q, v, p], r = _ref1[0], g = _ref1[1], b = _ref1[2];
-            break;
-          case 2:
-            _ref2 = [p, v, t], r = _ref2[0], g = _ref2[1], b = _ref2[2];
-            break;
-          case 3:
-            _ref3 = [p, q, v], r = _ref3[0], g = _ref3[1], b = _ref3[2];
-            break;
-          case 4:
-            _ref4 = [t, p, v], r = _ref4[0], g = _ref4[1], b = _ref4[2];
-            break;
-          case 5:
-            _ref5 = [v, p, q], r = _ref5[0], g = _ref5[1], b = _ref5[2];
-            break;
-        }
+        i = i % 6;
+        _ref = (function() {
+          switch (false) {
+            case i !== 0:
+              return [v, t, p];
+            case i !== 1:
+              return [q, v, p];
+            case i !== 2:
+              return [p, v, t];
+            case i !== 3:
+              return [p, q, v];
+            case i !== 4:
+              return [t, p, v];
+            case i !== 5:
+              return [v, p, q];
+            default:
+              return [1, 1, 1];
+          }
+        })(), r = _ref[0], g = _ref[1], b = _ref[2];
         return {
           r: Math.floor(r * 255),
           g: Math.floor(g * 255),
@@ -395,7 +472,6 @@
               break;
             case b:
               h = (r - g) / d + 4;
-              break;
           }
           h /= 6;
         }

@@ -17,7 +17,7 @@
         return $(this).on({
             changeColor: function () {
                 return $("body").css({
-                    "background-color": $(this).colorPicker("getHEX")
+                    "background-color": $(this).colorPicker("getRGBA_string")
                 });
             }
         });
