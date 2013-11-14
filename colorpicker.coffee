@@ -3,19 +3,19 @@ $.fn.colorPicker = (action = "init", param)->
     when "init"
       @.each ()->
         data = $(@).data "colorpicker"
-        $(@).data 'colorpicker', new ColorPicker @
+        $(@).data 'colorpicker', new ColorPicker @, param
     else
       @.eq(0).data("colorpicker")[action](param)
 
 class ColorPicker
-  picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column first'><div class='selector'></div></div><div class='column second'><div class='opacity-bg'><div class='selector'></div></div></div></div>"
+  picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column value'><div class='selector'></div></div><div class='column op-wrapper'><div class='op-column'><div class='selector'></div></div></div></div>"
 
   input: null
   el: null
   map: null
   pointer: null
   col: null
-  op_col: null
+  op_wrapper: null
   sel: null
   hsv:
     h: 0
@@ -29,17 +29,17 @@ class ColorPicker
   hex: "#FF0000"
 
 
-  constructor: (input)->
+  constructor: (input, param)->
     if !input
       console.log "ERROR: Empty first param"
 
     @el = $ picker_code
     @map = @el.find ".map"
     @pointer = @map.find ".pointer"
-    @col = @el.find ".column.first"
+    @col = @el.find ".column.value"
     @sel = @col.find ".selector"
-    @op_col = @el.find ".column.second"
-    @op_bg = @op_col.find ".opacity-bg"
+    @op_wrapper = @el.find ".column.op-wrapper"
+    @op_col = @op_wrapper.find ".op-column"
     @op_sel = @op_col.find ".selector"
     @col.css
       "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff)"
@@ -54,8 +54,12 @@ class ColorPicker
       mousedown: @_pointerStartmove
     @col.on
       mousedown: @_selectorStartmove
-    @op_col.on
-      mousedown: @_opselectorStartmove
+    if param?.opacity is 1
+      @op_col.on
+        mousedown: @_opselectorStartmove
+    else
+      @el.addClass "disable-opacity"
+
     @_bind input
 
   _bind: (input)=>
@@ -204,7 +208,7 @@ class ColorPicker
   _opselectorMove: (e)=>
     e.stopPropagation()
     e.preventDefault()
-    y = (e.clientY - @op_col.offset().top) * 100 / @op_col.height()
+    y = (e.clientY - @op_wrapper.offset().top) * 100 / @op_wrapper.height()
     y = Math.max(Math.min(100, y), 0)
     @op_sel.css "top", y + "%"
     @_setOpacity 100 - y
@@ -233,17 +237,18 @@ class ColorPicker
     @pointer.css "top", (1 - @hsv.v) * 100 + "%"
     @pointer.css "left", @hsv.h * 100 + "%"
     @sel.css "top", (1 - @hsv.s) * 100 + "%"
+    @op_sel.css "top", (1 - @opacity) * 100 + "%"
     @map.css
       "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, #{1 - @hsv.s}), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)"
       "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, #{1 - @hsv.s}), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
     @col.css
       "background-color": @cnv.hsvtohex h: @hsv.h, s: 1, v: @hsv.v
     rgba = @getRGBA()
-    @op_bg.css
+    @op_col.css
       "background-color": "rgba(#{rgba.r},#{rgba.g},#{rgba.b},#{rgba.a})"
     @input?.trigger "changeColor"
 
-  setHSV: (h, s, v)->
+  setHSV: ({h, s, v})->
     @hsv = {h, s, v}
     @_recalculateColor()
     @_updateControls()
@@ -257,7 +262,7 @@ class ColorPicker
     @input?.val(@hex)
     @_updateControls()
 
-  setRGBA: (r,g,b,a)->
+  setRGBA: ({r,g,b,a})->
     @rgb = {r,g,b}
     @opacity = a
     @hsv = @cnv.rgbtohsv @rgb
@@ -287,7 +292,7 @@ class ColorPicker
     $.extend @rgb, a:@opacity
 
   getRGBA_string: ()->
-    "rgba(#{@rgb.r},#{@rgb.g},#{@rgb.b},#{@opacity})"
+    "rgba(#{@rgb.r}, #{@rgb.g}, #{@rgb.b}, #{@opacity.toFixed 2})"
 
   cnv:
     hsvtohex: (hsv)->

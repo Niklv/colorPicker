@@ -13,7 +13,7 @@
 <script src="jquery.js"></script>
 <script src="colorpicker.js"></script>
 <script>
-    $(".colorpicker").colorPicker().each(function () {
+    $(".colorpicker").colorPicker("init", {opacity: 1}).each(function () {
         return $(this).on({
             changeColor: function () {
                 return $("body").css({

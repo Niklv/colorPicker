@@ -12,7 +12,7 @@
         return this.each(function() {
           var data;
           data = $(this).data("colorpicker");
-          return $(this).data('colorpicker', new ColorPicker(this));
+          return $(this).data('colorpicker', new ColorPicker(this, param));
         });
       default:
         return this.eq(0).data("colorpicker")[action](param);
@@ -22,7 +22,7 @@
   ColorPicker = (function() {
     var picker_code;
 
-    picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column first'><div class='selector'></div></div><div class='column second'><div class='opacity-bg'><div class='selector'></div></div></div></div>";
+    picker_code = "<div class='picker'><div class='map'><div class='pointer'></div></div><div class='column value'><div class='selector'></div></div><div class='column op-wrapper'><div class='op-column'><div class='selector'></div></div></div></div>";
 
     ColorPicker.prototype.input = null;
 
@@ -34,7 +34,7 @@
 
     ColorPicker.prototype.col = null;
 
-    ColorPicker.prototype.op_col = null;
+    ColorPicker.prototype.op_wrapper = null;
 
     ColorPicker.prototype.sel = null;
 
@@ -54,7 +54,7 @@
 
     ColorPicker.prototype.hex = "#FF0000";
 
-    function ColorPicker(input) {
+    function ColorPicker(input, param) {
       this._updateControls = __bind(this._updateControls, this);
       this._recalculateColor = __bind(this._recalculateColor, this);
       this._setOpacity = __bind(this._setOpacity, this);
@@ -79,10 +79,10 @@
       this.el = $(picker_code);
       this.map = this.el.find(".map");
       this.pointer = this.map.find(".pointer");
-      this.col = this.el.find(".column.first");
+      this.col = this.el.find(".column.value");
       this.sel = this.col.find(".selector");
-      this.op_col = this.el.find(".column.second");
-      this.op_bg = this.op_col.find(".opacity-bg");
+      this.op_wrapper = this.el.find(".column.op-wrapper");
+      this.op_col = this.op_wrapper.find(".op-column");
       this.op_sel = this.op_col.find(".selector");
       this.col.css({
         "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, 0), #ffffff)",
@@ -99,9 +99,13 @@
       this.col.on({
         mousedown: this._selectorStartmove
       });
-      this.op_col.on({
-        mousedown: this._opselectorStartmove
-      });
+      if ((param != null ? param.opacity : void 0) === 1) {
+        this.op_col.on({
+          mousedown: this._opselectorStartmove
+        });
+      } else {
+        this.el.addClass("disable-opacity");
+      }
       this._bind(input);
     }
 
@@ -282,7 +286,7 @@
       var y;
       e.stopPropagation();
       e.preventDefault();
-      y = (e.clientY - this.op_col.offset().top) * 100 / this.op_col.height();
+      y = (e.clientY - this.op_wrapper.offset().top) * 100 / this.op_wrapper.height();
       y = Math.max(Math.min(100, y), 0);
       this.op_sel.css("top", y + "%");
       this._setOpacity(100 - y);
@@ -318,6 +322,7 @@
       this.pointer.css("top", (1 - this.hsv.v) * 100 + "%");
       this.pointer.css("left", this.hsv.h * 100 + "%");
       this.sel.css("top", (1 - this.hsv.s) * 100 + "%");
+      this.op_sel.css("top", (1 - this.opacity) * 100 + "%");
       this.map.css({
         "background": "-webkit-linear-gradient(top, rgba(255, 255, 255, " + (1 - this.hsv.s) + "), #000000), -webkit-linear-gradient(to right, #ff0000 0%, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
         "background-image": "linear-gradient(to bottom, rgba(255, 255, 255, " + (1 - this.hsv.s) + "), #000), linear-gradient(to right, #F00 0%, #FF0, #0F0, #0FF, #00F, #F0F, #F00)"
@@ -330,13 +335,15 @@
         })
       });
       rgba = this.getRGBA();
-      this.op_bg.css({
+      this.op_col.css({
         "background-color": "rgba(" + rgba.r + "," + rgba.g + "," + rgba.b + "," + rgba.a + ")"
       });
       return (_ref = this.input) != null ? _ref.trigger("changeColor") : void 0;
     };
 
-    ColorPicker.prototype.setHSV = function(h, s, v) {
+    ColorPicker.prototype.setHSV = function(_arg) {
+      var h, s, v;
+      h = _arg.h, s = _arg.s, v = _arg.v;
       this.hsv = {
         h: h,
         s: s,
@@ -360,8 +367,9 @@
       return this._updateControls();
     };
 
-    ColorPicker.prototype.setRGBA = function(r, g, b, a) {
-      var _ref;
+    ColorPicker.prototype.setRGBA = function(_arg) {
+      var a, b, g, r, _ref;
+      r = _arg.r, g = _arg.g, b = _arg.b, a = _arg.a;
       this.rgb = {
         r: r,
         g: g,
@@ -409,7 +417,7 @@
     };
 
     ColorPicker.prototype.getRGBA_string = function() {
-      return "rgba(" + this.rgb.r + "," + this.rgb.g + "," + this.rgb.b + "," + this.opacity + ")";
+      return "rgba(" + this.rgb.r + ", " + this.rgb.g + ", " + this.rgb.b + ", " + (this.opacity.toFixed(2)) + ")";
     };
 
     ColorPicker.prototype.cnv = {
